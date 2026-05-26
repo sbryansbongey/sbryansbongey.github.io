@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessible QR Code Generator</title>
+  <style>
+    :root {
+      --bg: #fff8ef;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --accent: #f97316;
+      --accent-dark: #c2410c;
+      --border: #fed7aa;
+      --shadow: 0 18px 40px rgba(124, 45, 18, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top left, #ffedd5, var(--bg) 44%, #ffffff);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+
+    main {
+      width: min(100%, 760px);
+    }
+
+    .app {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: clamp(1.25rem, 4vw, 2.5rem);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(2rem, 5vw, 3.15rem);
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      margin: 0 auto;
+      max-width: 46rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    form {
+      display: grid;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+    }
+
+    input {
+      width: 100%;
+      border: 2px solid #fb923c;
+      border-radius: 16px;
+      font-size: 1.05rem;
+      padding: 0.9rem 1rem;
+      color: var(--text);
+    }
+
+    input:focus,
+    button:focus {
+      outline: 4px solid #fdba74;
+      outline-offset: 3px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 0.9rem 1.2rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .qr-section {
+      display: grid;
+      gap: 1rem;
+      justify-items: center;
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border-radius: 24px;
+      background: #fff7ed;
+      border: 1px dashed #fb923c;
+    }
+
+    .qr-wrap {
+      position: relative;
+      width: min(78vw, 320px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      background: white;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: inset 0 0 0 2px #ffedd5;
+    }
+
+    #qrCode {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    #qrCode canvas,
+    #qrCode img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cit-logo {
+      position: absolute;
+      width: 28%;
+      height: 28%;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 5px solid white;
+      border-radius: 999px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+      pointer-events: none;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .secondary {
+      background: #431407;
+    }
+
+    .secondary:hover {
+      background: #7c2d12;
+    }
+
+    .status {
+      min-height: 1.4rem;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.98rem;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: 0;
+      text-align: center;
+    }
+
+    @media (max-width: 560px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="app" aria-labelledby="page-title">
+      <div class="header">
+        <h1 id="page-title">QR Code Generator</h1>
+        <p class="subtitle">Create a scannable QR code with a CIT logo mark in the center.</p>
+      </div>
+
+      <form id="qrForm">
+        <div>
+          <label for="qrText">Text or URL for the QR code</label>
+        </div>
+        <div class="input-row">
+          <input
+            id="qrText"
+            name="qrText"
+            type="text"
+            autocomplete="url"
+            placeholder="https://example.com"
+            aria-describedby="inputHint status"
+            required
+          />
+          <button type="submit">Generate</button>
+        </div>
+        <p id="inputHint" class="hint">Tip: Shorter text creates a cleaner, easier-to-scan QR code.</p>
+      </form>
+
+      <section class="qr-section" aria-labelledby="qr-heading">
+        <h2 id="qr-heading" style="margin:0; font-size:1.25rem;">Your QR Code</h2>
+        <div class="qr-wrap" aria-label="Generated QR code with CIT logo mark" role="img">
+          <div id="qrCode"></div>
+          <svg class="cit-logo" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+            <circle cx="60" cy="60" r="56" fill="#ffffff" />
+            <circle cx="60" cy="60" r="50" fill="#fff7ed" stroke="#f97316" stroke-width="8" />
+            <path d="M35 36h50c5 0 9 4 9 9v30c0 5-4 9-9 9H35c-5 0-9-4-9-9V45c0-5 4-9 9-9Z" fill="#ffffff" stroke="#431407" stroke-width="5" />
+            <text x="60" y="69" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900" fill="#f97316">CIT</text>
+            <path d="M34 86c16 10 36 10 52 0" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round" />
+          </svg>
+        </div>
+        <p id="status" class="status" aria-live="polite">Enter text or a URL, then select Generate.</p>
+        <div class="actions">
+          <button id="downloadButton" class="secondary" type="button">Download PNG</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const form = document.querySelector('#qrForm');
+    const input = document.querySelector('#qrText');
+    const qrCodeEl = document.querySelector('#qrCode');
+    const statusEl = document.querySelector('#status');
+    const downloadButton = document.querySelector('#downloadButton');
+    const icon = document.querySelector('.cit-logo');
+
+    let currentText = '';
+
+    function generateQRCode(text) {
+      qrCodeEl.innerHTML = '';
+
+      new QRCode(qrCodeEl, {
+        text,
+        width: 640,
+        height: 640,
+        colorDark: '#111827',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      currentText = text;
+      statusEl.textContent = 'QR code generated. Test scan it before sharing, especially with the center icon.';
+    }
+
+    function drawRoundedImage(ctx, image, x, y, size) {
+      const radius = size / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x, y, size, size, radius);
+      ctx.clip();
+      ctx.drawImage(image, x, y, size, size);
+      ctx.restore();
+    }
+
+    function downloadQRCode() {
+      const qrCanvas = qrCodeEl.querySelector('canvas');
+      if (!qrCanvas || !currentText) {
+        statusEl.textContent = 'Generate a QR code before downloading.';
+        input.focus();
+        return;
+      }
+
+      const exportCanvas = document.createElement('canvas');
+      const size = 1000;
+      const padding = 70;
+      exportCanvas.width = size;
+      exportCanvas.height = size;
+      const ctx = exportCanvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(qrCanvas, padding, padding, size - padding * 2, size - padding * 2);
+
+      const svgText = new XMLSerializer().serializeToString(icon);
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const image = new Image();
+
+      image.onload = () => {
+        const iconSize = size * 0.26;
+        const x = (size - iconSize) / 2;
+        const y = (size - iconSize) / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, iconSize / 2 + 18, 0, Math.PI * 2);
+        ctx.fill();
+        drawRoundedImage(ctx, image, x, y, iconSize);
+
+        const link = document.createElement('a');
+        link.download = 'cit-logo-qr-code.png';
+        link.href = exportCanvas.toDataURL('image/png');
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+
+      image.src = url;
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+
+      if (!text) {
+        statusEl.textContent = 'Please enter text or a URL first.';
+        input.focus();
+        return;
+      }
+
+      generateQRCode(text);
+    });
+
+    downloadButton.addEventListener('click', downloadQRCode);
+
+    generateQRCode('https://example.com');
+  </script>
+</body>
+</html>
