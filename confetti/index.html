@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessible Confetti Button</title>
+  <style>
+    :root {
+      --bg: #fff8ef;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --accent: #f97316;
+      --accent-dark: #c2410c;
+      --focus: #2563eb;
+      --shadow: 0 20px 50px rgba(31, 41, 55, 0.15);
+      --radius: 1.5rem;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(249, 115, 22, 0.2), transparent 32rem),
+        linear-gradient(135deg, #fff8ef 0%, #fef3c7 45%, #e0f2fe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow-x: hidden;
+    }
+
+    main {
+      width: min(100%, 42rem);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(1.5rem, 5vw, 3rem);
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(6px);
+    }
+
+    .eyebrow {
+      color: var(--accent-dark);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      margin: 0 0 0.75rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 7vw, 4rem);
+      line-height: 1.05;
+      margin: 0 0 1rem;
+    }
+
+    .message {
+      color: var(--muted);
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      line-height: 1.6;
+      margin: 0 auto 2rem;
+      max-width: 34rem;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent);
+      color: white;
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      font-weight: 700;
+      padding: 1rem 1.6rem;
+      min-height: 3.25rem;
+      min-width: 12rem;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(249, 115, 22, 0.28);
+      transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(194, 65, 12, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:focus-visible {
+      outline: 4px solid var(--focus);
+      outline-offset: 4px;
+    }
+
+    .status {
+      min-height: 1.5rem;
+      margin-top: 1.25rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main aria-labelledby="page-title">
+    <section class="card" aria-describedby="page-description">
+      <p class="eyebrow" id="app-label">Celebration Button</p>
+      <h1 id="page-title">Press for Confetti!</h1>
+      <p class="message" id="page-description">
+        Use the button below to launch a cheerful burst of confetti. This page works with a mouse, keyboard, touch screen, or switch access.
+      </p>
+      <button id="confettiButton" type="button" aria-describedby="confettiHelp">
+        Launch Confetti
+      </button>
+      <p class="status" id="confettiHelp">Press Enter, Space, or tap the button.</p>
+      <p class="status" id="statusMessage" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+
+  <script>
+    /********************************************************************
+     * TEACHER-EDITABLE CONTENT
+     * Change the words below to quickly customize the app.
+     ********************************************************************/
+    const teacherContent = {
+      eyebrow: "Celebration Button",
+      title: "Press for Confetti!",
+      description: "Use the button below to launch a cheerful burst of confetti. This page works with a mouse, keyboard, touch screen, or switch access.",
+      buttonText: "Launch Confetti",
+      helpText: "Press Enter, Space, or tap the button.",
+      successMessages: [
+        "Confetti launched!",
+        "Hooray!",
+        "Great job!",
+        "Celebration time!"
+      ]
+    };
+
+    const appLabel = document.getElementById("app-label");
+    const pageTitle = document.getElementById("page-title");
+    const pageDescription = document.getElementById("page-description");
+    const confettiButton = document.getElementById("confettiButton");
+    const confettiHelp = document.getElementById("confettiHelp");
+    const statusMessage = document.getElementById("statusMessage");
+    const canvas = document.getElementById("confettiCanvas");
+    const ctx = canvas.getContext("2d");
+
+    appLabel.textContent = teacherContent.eyebrow;
+    pageTitle.textContent = teacherContent.title;
+    pageDescription.textContent = teacherContent.description;
+    confettiButton.textContent = teacherContent.buttonText;
+    confettiHelp.textContent = teacherContent.helpText;
+
+    let confettiPieces = [];
+    let animationFrameId = null;
+    let launchCount = 0;
+
+    const colors = ["#f97316", "#2563eb", "#16a34a", "#dc2626", "#9333ea", "#facc15", "#0891b2"];
+
+    function resizeCanvas() {
+      const pixelRatio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(window.innerWidth * pixelRatio);
+      canvas.height = Math.floor(window.innerHeight * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createConfettiPiece(originX, originY) {
+      return {
+        x: originX,
+        y: originY,
+        size: randomBetween(6, 12),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        velocityX: randomBetween(-7, 7),
+        velocityY: randomBetween(-13, -6),
+        rotation: randomBetween(0, Math.PI * 2),
+        rotationSpeed: randomBetween(-0.25, 0.25),
+        gravity: randomBetween(0.25, 0.45),
+        opacity: 1
+      };
+    }
+
+    function launchConfetti() {
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const buttonRect = confettiButton.getBoundingClientRect();
+      const originX = buttonRect.left + buttonRect.width / 2;
+      const originY = buttonRect.top + buttonRect.height / 2;
+      const pieceCount = reducedMotion ? 24 : 130;
+
+      for (let i = 0; i < pieceCount; i += 1) {
+        confettiPieces.push(createConfettiPiece(originX, originY));
+      }
+
+      launchCount += 1;
+      const message = teacherContent.successMessages[launchCount % teacherContent.successMessages.length];
+      statusMessage.textContent = message;
+
+      if (!animationFrameId) {
+        animateConfetti();
+      }
+    }
+
+    function drawPiece(piece) {
+      ctx.save();
+      ctx.globalAlpha = piece.opacity;
+      ctx.translate(piece.x, piece.y);
+      ctx.rotate(piece.rotation);
+      ctx.fillStyle = piece.color;
+      ctx.fillRect(-piece.size / 2, -piece.size / 4, piece.size, piece.size / 2);
+      ctx.restore();
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      confettiPieces.forEach((piece) => {
+        piece.x += piece.velocityX;
+        piece.y += piece.velocityY;
+        piece.velocityY += piece.gravity;
+        piece.rotation += piece.rotationSpeed;
+        piece.opacity -= 0.006;
+        drawPiece(piece);
+      });
+
+      confettiPieces = confettiPieces.filter((piece) => {
+        return piece.opacity > 0 && piece.y < window.innerHeight + 40;
+      });
+
+      if (confettiPieces.length > 0) {
+        animationFrameId = requestAnimationFrame(animateConfetti);
+      } else {
+        animationFrameId = null;
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+    }
+
+    confettiButton.addEventListener("click", launchConfetti);
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
